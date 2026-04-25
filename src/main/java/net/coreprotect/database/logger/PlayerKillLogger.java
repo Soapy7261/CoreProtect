@@ -4,7 +4,8 @@ import java.sql.PreparedStatement;
 import java.util.Locale;
 
 import org.bukkit.Bukkit;
-import org.bukkit.block.BlockState;
+import org.bukkit.Location;
+import org.bukkit.entity.EntityType;
 
 import net.coreprotect.CoreProtect;
 import net.coreprotect.config.Config;
@@ -20,9 +21,9 @@ public class PlayerKillLogger {
         throw new IllegalStateException("Database class");
     }
 
-    public static void log(PreparedStatement preparedStmt, int batchCount, String user, BlockState block, String player) {
+    public static void log(PreparedStatement preparedStmt, int batchCount, String user, Location location, String player) {
         try {
-            if (ConfigHandler.blacklist.get(user.toLowerCase(Locale.ROOT)) != null) {
+            if (ConfigHandler.isBlacklisted(user)) {
                 return;
             }
 
@@ -30,7 +31,8 @@ public class PlayerKillLogger {
                 UserStatement.loadId(preparedStmt.getConnection(), player, null);
             }
 
-            CoreProtectPreLogEvent event = new CoreProtectPreLogEvent(user);
+            Location initialLocation = location.clone();
+            CoreProtectPreLogEvent event = new CoreProtectPreLogEvent(user, initialLocation, CoreProtectPreLogEvent.Action.PLAYER_KILL, 3, null, EntityType.PLAYER, null);
             if (Config.getGlobal().API_ENABLED && !Bukkit.isPrimaryThread()) {
                 CoreProtect.getInstance().getServer().getPluginManager().callEvent(event);
             }
@@ -41,11 +43,12 @@ public class PlayerKillLogger {
 
             int userId = UserStatement.getId(preparedStmt, event.getUser(), true);
             int playerId = ConfigHandler.playerIdCache.get(player.toLowerCase(Locale.ROOT));
-            int wid = WorldUtils.getWorldId(block.getWorld().getName());
+            Location eventLocation = event.getLocation();
+            int wid = WorldUtils.getWorldId(eventLocation.getWorld().getName());
             int time = (int) (System.currentTimeMillis() / 1000L);
-            int x = block.getX();
-            int y = block.getY();
-            int z = block.getZ();
+            int x = eventLocation.getBlockX();
+            int y = eventLocation.getBlockY();
+            int z = eventLocation.getBlockZ();
             BlockStatement.insert(preparedStmt, batchCount, time, userId, wid, x, y, z, 0, playerId, null, null, 3, 0);
         }
         catch (Exception e) {

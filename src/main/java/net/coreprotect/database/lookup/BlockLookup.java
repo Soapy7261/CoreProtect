@@ -1,25 +1,18 @@
 package net.coreprotect.database.lookup;
 
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.Locale;
-
-import org.bukkit.Material;
-import org.bukkit.block.BlockState;
-import org.bukkit.command.CommandSender;
-
 import net.coreprotect.config.ConfigHandler;
 import net.coreprotect.database.statement.UserStatement;
 import net.coreprotect.language.Phrase;
 import net.coreprotect.language.Selector;
 import net.coreprotect.listener.channel.PluginChannelListener;
-import net.coreprotect.utility.ChatUtils;
-import net.coreprotect.utility.Color;
-import net.coreprotect.utility.EntityUtils;
-import net.coreprotect.utility.MaterialUtils;
-import net.coreprotect.utility.StringUtils;
-import net.coreprotect.utility.Util;
-import net.coreprotect.utility.WorldUtils;
+import net.coreprotect.utility.*;
+import org.bukkit.Material;
+import org.bukkit.block.BlockState;
+import org.bukkit.command.CommandSender;
+
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.Locale;
 
 public class BlockLookup {
 
@@ -119,12 +112,10 @@ public class BlockLookup {
                     target = EntityUtils.getEntityType(resultType).name();
                 }
                 else {
-                    Material resultMaterial = MaterialUtils.getType(resultType);
-                    if (resultMaterial == null) {
-                        resultMaterial = Material.AIR;
+                    target = MaterialUtils.getBlockDisplayName(resultType, resultData);
+                    if (target.length() > 0 && !target.contains(":")) {
+                        target = "minecraft:" + target.toLowerCase(Locale.ROOT);
                     }
-                    target = StringUtils.nameFilter(resultMaterial.name().toLowerCase(Locale.ROOT), resultData);
-                    target = "minecraft:" + target.toLowerCase(Locale.ROOT);
                 }
                 if (target.length() > 0) {
                     target = "" + target + "";
@@ -157,7 +148,7 @@ public class BlockLookup {
                     // resultText = Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Color.WHITE + "No block data found at " + Color.ITALIC + "x" + x + "/y" + y + "/z" + z + ".";
                     resultText = Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.NO_DATA_LOCATION, Selector.FIRST);
                     if (!blockName.equals("air") && !blockName.equals("cave_air")) {
-                        resultText = Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.NO_DATA, Color.ITALIC + block.getType().name().toLowerCase(Locale.ROOT)) + "\n";
+                        resultText = Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.NO_DATA, Color.ITALIC + block.getType().name().toLowerCase(Locale.ROOT) + Color.WHITE) + "\n";
                     }
                 }
             }

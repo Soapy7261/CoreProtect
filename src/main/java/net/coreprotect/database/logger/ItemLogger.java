@@ -44,7 +44,7 @@ public class ItemLogger {
 
     public static void log(PreparedStatement preparedStmt, int batchCount, Location location, int offset, String user) {
         try {
-            if (ConfigHandler.blacklist.get(user.toLowerCase(Locale.ROOT)) != null) {
+            if (ConfigHandler.isBlacklisted(user)) {
                 return;
             }
 
@@ -124,12 +124,16 @@ public class ItemLogger {
             for (ItemStack item : items) {
                 if (item != null && item.getAmount() > 0 && !BlockUtils.isAir(item.getType())) {
                     // Object[] metadata = new Object[] { slot, item.getItemMeta() };
+                    if (ConfigHandler.isFilterBlacklisted(user, item.getType().getKey().toString())){
+                        continue;
+                    }
+
                     List<List<Map<String, Object>>> data = ItemMetaHandler.serialize(item, null, null, 0);
                     if (data.size() == 0) {
                         data = null;
                     }
 
-                    CoreProtectPreLogEvent event = new CoreProtectPreLogEvent(user);
+                    CoreProtectPreLogEvent event = new CoreProtectPreLogEvent(user, location, CoreProtectPreLogEvent.Action.ITEM_TRANSACTION, action, item.getType(), null, null);
                     if (Config.getGlobal().API_ENABLED && !Bukkit.isPrimaryThread()) {
                         CoreProtect.getInstance().getServer().getPluginManager().callEvent(event);
                     }
@@ -137,13 +141,14 @@ public class ItemLogger {
                     if (event.isCancelled()) {
                         return;
                     }
-
+                    
                     int userId = UserStatement.getId(preparedStmt, event.getUser(), true);
-                    int wid = WorldUtils.getWorldId(location.getWorld().getName());
+                    Location eventLocation = event.getLocation();
+                    int wid = WorldUtils.getWorldId(eventLocation.getWorld().getName());
                     int time = (int) (System.currentTimeMillis() / 1000L) - offset;
-                    int x = location.getBlockX();
-                    int y = location.getBlockY();
-                    int z = location.getBlockZ();
+                    int x = eventLocation.getBlockX();
+                    int y = eventLocation.getBlockY();
+                    int z = eventLocation.getBlockZ();
                     int typeId = MaterialUtils.getBlockId(item.getType().name(), true);
                     int amount = item.getAmount();
                     ItemStatement.insert(preparedStmt, batchCount, time, userId, wid, x, y, z, typeId, data, amount, action);

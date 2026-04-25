@@ -1,14 +1,14 @@
 package net.coreprotect.language;
 
+import net.coreprotect.utility.ChatMessage;
+import net.coreprotect.utility.Color;
+import net.coreprotect.utility.StringUtils;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import net.coreprotect.utility.ChatMessage;
-import net.coreprotect.utility.Color;
-import net.coreprotect.utility.StringUtils;
 
 public enum Phrase {
 
@@ -78,6 +78,9 @@ public enum Phrase {
     HELP_PARAMS_7,
     HELP_PURGE_1,
     HELP_PURGE_2,
+    HELP_PURGE_3,
+    HELP_PURGE_4,
+    HELP_PURGE_5,
     HELP_PURGE_COMMAND,
     HELP_RADIUS_1,
     HELP_RADIUS_2,
@@ -106,6 +109,7 @@ public enum Phrase {
     INVALID_DONATION_KEY,
     INVALID_INCLUDE,
     INVALID_INCLUDE_COMBO,
+    INVALID_PARAMETER,
     INVALID_RADIUS,
     INVALID_SELECTION,
     INVALID_USERNAME,
@@ -206,6 +210,7 @@ public enum Phrase {
     TIME_MINUTES,
     TIME_MONTHS,
     TIME_SECONDS,
+    TIME_UNITS,
     TIME_WEEKS,
     TIME_YEARS,
     UPDATE_ERROR,

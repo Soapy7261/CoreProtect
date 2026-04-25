@@ -1,5 +1,6 @@
 package net.coreprotect.listener.player;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -18,12 +19,14 @@ import org.bukkit.block.Jukebox;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.Bisected.Half;
+import org.bukkit.block.data.SideChaining.ChainPart;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Lightable;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.Bed.Part;
 import org.bukkit.block.data.type.Cake;
+import org.bukkit.block.data.type.Shelf;
 import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -37,6 +40,7 @@ import org.bukkit.inventory.BlockInventoryHolder;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 
 import net.coreprotect.CoreProtect;
 import net.coreprotect.bukkit.BukkitAdapter;
@@ -67,6 +71,47 @@ public final class PlayerInteractListener extends Queue implements Listener {
     private final SignInspector signInspector = new SignInspector();
     private final ContainerInspector containerInspector = new ContainerInspector();
     private final InteractionInspector interactionInspector = new InteractionInspector();
+
+    private static boolean containsItem(ItemStack itemStack) {
+        return itemStack != null && itemStack.getType() != Material.AIR;
+    }
+
+    private static ItemStack getHandItem(Player player, EquipmentSlot hand) {
+        if (hand == EquipmentSlot.HAND) {
+            return player.getInventory().getItemInMainHand();
+        }
+        else if (hand == EquipmentSlot.OFF_HAND) {
+            return player.getInventory().getItemInOffHand();
+        }
+
+        return null;
+    }
+
+    private static boolean isLecternBook(ItemStack itemStack) {
+        if (!containsItem(itemStack)) {
+            return false;
+        }
+
+        Material type = itemStack.getType();
+        return type == Material.WRITABLE_BOOK || type == Material.WRITTEN_BOOK;
+    }
+
+    private static boolean containsLecternBook(ItemStack[] contents) {
+        return contents != null && contents.length > 0 && isLecternBook(contents[0]);
+    }
+
+    private static void logLecternBookPlacement(Player player, Block block, ItemStack[] oldContents) {
+        Location location = block.getLocation();
+        Scheduler.scheduleSyncDelayedTask(CoreProtect.getInstance(), () -> {
+            BlockState blockState = location.getBlock().getState();
+            if (blockState.getType() == Material.LECTERN && blockState instanceof InventoryHolder) {
+                InventoryHolder inventoryHolder = (InventoryHolder) blockState;
+                if (containsLecternBook(inventoryHolder.getInventory().getContents())) {
+                    InventoryChangeListener.inventoryTransaction(player.getName(), location, oldContents);
+                }
+            }
+        }, location, 1);
+    }
 
     @EventHandler(priority = EventPriority.LOWEST)
     protected void onPlayerInspect(PlayerInteractEvent event) {
@@ -145,7 +190,7 @@ public final class PlayerInteractListener extends Queue implements Listener {
                     }
                     else if (isContainerBlock && Config.getConfig(world).ITEM_TRANSACTIONS) {
                         Location location = null;
-                        if (type.equals(Material.CHEST) || type.equals(Material.TRAPPED_CHEST)) {
+                        if (type.equals(Material.CHEST) || type.equals(Material.TRAPPED_CHEST) || BukkitAdapter.ADAPTER.isCopperChest(type)) {
                             Chest chest = (Chest) clickedBlock.getState();
                             InventoryHolder inventoryHolder = chest.getInventory().getHolder();
 
@@ -426,6 +471,20 @@ public final class PlayerInteractListener extends Queue implements Listener {
                             }
                         }
                     }
+                    else if (type == Material.LECTERN && Config.getConfig(world).ITEM_TRANSACTIONS && event.useItemInHand() != Event.Result.DENY) {
+                        BlockState blockState = block.getState();
+                        if (blockState instanceof InventoryHolder) {
+                            InventoryHolder inventoryHolder = (InventoryHolder) blockState;
+                            ItemStack[] oldContents = ItemUtils.getContainerState(inventoryHolder.getInventory().getContents());
+                            ItemStack handItem = getHandItem(player, event.getHand());
+                            boolean oldContainsBook = containsLecternBook(oldContents);
+                            boolean handIsBook = isLecternBook(handItem);
+
+                            if (!oldContainsBook && handIsBook) {
+                                logLecternBookPlacement(player, block, oldContents);
+                            }
+                        }
+                    }
                     else if (BukkitAdapter.ADAPTER.isChiseledBookshelf(type)) {
                         BlockState blockState = block.getState();
                         if (blockState instanceof BlockInventoryHolder) {
@@ -464,6 +523,49 @@ public final class PlayerInteractListener extends Queue implements Listener {
                             else { // fallback if unable to determine bookshelf slot
                                 InventoryChangeListener.inventoryTransaction(player.getName(), blockState.getLocation(), null);
                             }
+                        }
+                    } else if (BukkitAdapter.ADAPTER.isShelf(type) ){
+                        BlockData blockState = block.getBlockData();  
+                        if (blockState instanceof Shelf){
+                            Shelf shelf = (Shelf) blockState;
+                        
+                        // ignore clicking on the back face
+                        if (event.getBlockFace() != shelf.getFacing()){
+                            return;
+                        }
+
+                        if (shelf.getSideChain() == ChainPart.UNCONNECTED){
+                            InventoryChangeListener.inventoryTransaction(player.getName(), block.getLocation(), null);
+                        } else {
+                            Block center = block;
+                            Vector direction = shelf.getFacing().getDirection();
+                            
+                                if (shelf.getSideChain() == ChainPart.LEFT){
+                                    center = center.getRelative(direction.getBlockZ(), 0, -direction.getBlockX());
+                                } else if (shelf.getSideChain() == ChainPart.RIGHT){
+                                    center = center.getRelative(-direction.getBlockZ(), 0, direction.getBlockX());
+                                }
+
+                                BlockData centerBlockData = center.getBlockData();
+                                if (centerBlockData instanceof Shelf){
+                                    // log center
+                                    InventoryChangeListener.inventoryTransaction(player.getName(), center.getLocation(), null);
+
+                                    if (((Shelf)centerBlockData).getSideChain() != ChainPart.CENTER){
+                                        // if it's not the center it's just a chain of 2
+                                        InventoryChangeListener.inventoryTransaction(player.getName(), block.getLocation(), null);
+                                    } else {
+                                        Block left = center.getRelative(-direction.getBlockZ(), 0, direction.getBlockX());
+                                        InventoryChangeListener.inventoryTransaction(player.getName(), left.getLocation(), null);
+                                        
+                                        Block right = center.getRelative(direction.getBlockZ(), 0, -direction.getBlockX());
+                                        InventoryChangeListener.inventoryTransaction(player.getName(), right.getLocation(), null); 
+                                    }
+                                } else {
+                                    // fallback if invalid block is found just log clicked shelf
+                                    InventoryChangeListener.inventoryTransaction(player.getName(), block.getLocation(), null);
+                                }    
+                            } 
                         }
                     }
                     else if (BukkitAdapter.ADAPTER.isDecoratedPot(type)) {
@@ -549,9 +651,11 @@ public final class PlayerInteractListener extends Queue implements Listener {
             }
 
             if (event.useItemInHand() != Event.Result.DENY) {
-                List<Material> entityBlockTypes = Arrays.asList(Material.ARMOR_STAND, Material.END_CRYSTAL, Material.BOW, Material.CROSSBOW, Material.TRIDENT, Material.EXPERIENCE_BOTTLE, Material.SPLASH_POTION, Material.LINGERING_POTION, Material.ENDER_PEARL, Material.FIREWORK_ROCKET, Material.EGG, Material.SNOWBALL);
+                List<Material> entityBlockTypes = new ArrayList<>(Arrays.asList(Material.ARMOR_STAND, Material.END_CRYSTAL, Material.BOW, Material.CROSSBOW, Material.TRIDENT, Material.EXPERIENCE_BOTTLE, Material.SPLASH_POTION, Material.LINGERING_POTION, Material.ENDER_PEARL, Material.FIREWORK_ROCKET, Material.EGG, Material.SNOWBALL));
                 try {
                     entityBlockTypes.add(Material.valueOf("WIND_CHARGE"));
+                    entityBlockTypes.add(Material.valueOf("BLUE_EGG"));
+                    entityBlockTypes.add(Material.valueOf("BROWN_EGG"));
                 }
                 catch (Exception e) {
                     // not running MC 1.21+
