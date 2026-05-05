@@ -135,6 +135,24 @@ public class CoreProtectAPI extends Queue {
     }
 
     /**
+     * Performs a container lookup around the specified location.
+     * 
+     * @param location
+     *            The center location to look up
+     * @param time
+     *            Time constraint in seconds
+     * @param radius
+     *            Radius to search in the X/Z plane
+     * @return List of results or null if API is disabled
+     */
+    public List<ContainerResult> containerLookup(Location location, int time, int radius) {
+        if (isEnabled()) {
+            return BlockAPI.performContainerLookup(location, time, radius);
+        }
+        return null;
+    }
+
+    /**
      * Performs a lookup on session data for the specified user.
      * 
      * @param user
