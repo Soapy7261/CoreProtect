@@ -20,6 +20,7 @@ import org.bukkit.entity.Player;
 import net.coreprotect.api.BlockAPI;
 import net.coreprotect.api.QueueLookup;
 import net.coreprotect.api.SessionLookup;
+import net.coreprotect.api.result.ContainerResult;
 import net.coreprotect.config.Config;
 import net.coreprotect.consumer.Queue;
 import net.coreprotect.database.Database;
@@ -115,6 +116,22 @@ public class CoreProtectAPI extends Queue {
      */
     public List<String[]> queueLookup(Block block) {
         return QueueLookup.performLookup(block);
+    }
+
+    /**
+     * Performs a container lookup at the specified location.
+     * 
+     * @param location
+     *            The location to look up
+     * @param time
+     *            Time constraint in seconds
+     * @return List of results or null if API is disabled
+     */
+    public List<ContainerResult> containerLookup(Location location, int time) {
+        if (isEnabled()) {
+            return BlockAPI.performContainerLookup(location, time);
+        }
+        return null;
     }
 
     /**
