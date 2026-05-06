@@ -23,11 +23,13 @@ import net.coreprotect.api.MessageAPI;
 import net.coreprotect.api.QueueLookup;
 import net.coreprotect.api.SessionLookup;
 import net.coreprotect.api.SignAPI;
+import net.coreprotect.api.UsernameAPI;
 import net.coreprotect.api.result.BlockResult;
 import net.coreprotect.api.result.ContainerResult;
 import net.coreprotect.api.result.MessageResult;
 import net.coreprotect.api.result.SignResult;
 import net.coreprotect.api.result.SessionResult;
+import net.coreprotect.api.result.UsernameResult;
 import net.coreprotect.config.Config;
 import net.coreprotect.consumer.Queue;
 import net.coreprotect.database.Database;
@@ -198,6 +200,36 @@ public class CoreProtectAPI extends Queue {
     public List<SessionResult> sessionLookup(LookupOptions options) {
         if (isEnabled()) {
             return SessionLookup.performLookup(options);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a username history lookup for the specified user.
+     *
+     * @param user
+     *            The user or UUID to look up, or #global/null for all users
+     * @param time
+     *            Time constraint in seconds
+     * @return List of results or null if API is disabled
+     */
+    public List<UsernameResult> usernameLookup(String user, int time) {
+        if (isEnabled()) {
+            return UsernameAPI.performLookup(user, time);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a username history lookup with shared lookup options.
+     *
+     * @param options
+     *            Lookup options. User, time, and limit are applied; location and radius are ignored.
+     * @return List of results or null if API is disabled
+     */
+    public List<UsernameResult> usernameLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return UsernameAPI.performLookup(options);
         }
         return null;
     }
