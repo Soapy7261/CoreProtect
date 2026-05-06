@@ -26,6 +26,7 @@ import net.coreprotect.api.SignAPI;
 import net.coreprotect.api.result.ContainerResult;
 import net.coreprotect.api.result.MessageResult;
 import net.coreprotect.api.result.SignResult;
+import net.coreprotect.api.result.SessionResult;
 import net.coreprotect.config.Config;
 import net.coreprotect.consumer.Queue;
 import net.coreprotect.database.Database;
@@ -168,6 +169,20 @@ public class CoreProtectAPI extends Queue {
      */
     public List<String[]> sessionLookup(String user, int time) {
         return SessionLookup.performLookup(user, time);
+    }
+
+    /**
+     * Performs a typed lookup on session data.
+     *
+     * @param options
+     *            Lookup options
+     * @return List of results or null if API is disabled
+     */
+    public List<SessionResult> sessionLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return SessionLookup.performLookup(options);
+        }
+        return null;
     }
 
     /**
