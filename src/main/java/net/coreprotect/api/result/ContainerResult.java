@@ -7,7 +7,7 @@ import net.coreprotect.utility.MaterialUtils;
 /**
  * Represents the result of a container action lookup with typed fields.
  */
-public class ContainerResult {
+public class ContainerResult implements CoreProtectResult {
     private final long time;
     private final String username;
     private final String world;

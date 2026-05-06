@@ -5,7 +5,7 @@ import net.coreprotect.utility.BlockUtils;
 /**
  * Represents logged sign text.
  */
-public class SignResult {
+public class SignResult implements CoreProtectResult {
     private final long time;
     private final String username;
     private final String world;

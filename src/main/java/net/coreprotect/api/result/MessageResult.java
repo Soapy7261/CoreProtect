@@ -3,7 +3,7 @@ package net.coreprotect.api.result;
 /**
  * Represents a logged player chat message or command.
  */
-public class MessageResult {
+public class MessageResult implements CoreProtectResult {
     private final long time;
     private final String username;
     private final String world;

@@ -18,6 +18,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 import net.coreprotect.api.BlockAPI;
+import net.coreprotect.api.LookupOptions;
 import net.coreprotect.api.MessageAPI;
 import net.coreprotect.api.QueueLookup;
 import net.coreprotect.api.SessionLookup;
@@ -186,6 +187,20 @@ public class CoreProtectAPI extends Queue {
     }
 
     /**
+     * Performs a chat message lookup with shared lookup options.
+     *
+     * @param options
+     *            Lookup options
+     * @return List of results or null if API is disabled
+     */
+    public List<MessageResult> chatLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return MessageAPI.performChatLookup(options);
+        }
+        return null;
+    }
+
+    /**
      * Performs a chat message lookup around the specified location.
      *
      * @param user
@@ -222,6 +237,20 @@ public class CoreProtectAPI extends Queue {
     }
 
     /**
+     * Performs a command lookup with shared lookup options.
+     *
+     * @param options
+     *            Lookup options
+     * @return List of results or null if API is disabled
+     */
+    public List<MessageResult> commandLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return MessageAPI.performCommandLookup(options);
+        }
+        return null;
+    }
+
+    /**
      * Performs a command lookup around the specified location.
      *
      * @param user
@@ -253,6 +282,20 @@ public class CoreProtectAPI extends Queue {
     public List<SignResult> signLookup(Location location, int time) {
         if (isEnabled()) {
             return SignAPI.performLookup(location, time);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a sign text lookup with shared lookup options.
+     *
+     * @param options
+     *            Lookup options
+     * @return List of results or null if API is disabled
+     */
+    public List<SignResult> signLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return SignAPI.performLookup(options);
         }
         return null;
     }

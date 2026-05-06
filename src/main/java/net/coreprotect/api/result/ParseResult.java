@@ -14,7 +14,7 @@ import net.coreprotect.utility.MaterialUtils;
 import net.coreprotect.utility.StringUtils;
 import net.coreprotect.utility.WorldUtils;
 
-public class ParseResult {
+public class ParseResult implements CoreProtectResult {
     private final String[] parse;
 
     public ParseResult(String[] data) {
