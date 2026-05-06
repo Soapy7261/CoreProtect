@@ -10,6 +10,7 @@ import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 
+import net.coreprotect.api.result.BlockResult;
 import net.coreprotect.api.result.ContainerResult;
 import net.coreprotect.config.Config;
 import net.coreprotect.config.ConfigHandler;
@@ -91,6 +92,86 @@ public class BlockAPI {
                         String[] lookupData = new String[] { resultTime, resultUser, String.valueOf(x), String.valueOf(y), String.valueOf(z), String.valueOf(resultType), resultData, resultAction, resultRolledBack, String.valueOf(worldId), blockData };
 
                         result.add(StringUtils.toStringArray(lookupData));
+                    }
+                }
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+    /**
+     * Performs a typed lookup of block-related actions at the specified block.
+     *
+     * @param block
+     *            The block to look up
+     * @param options
+     *            Lookup options. User, time, and limit are applied; location and radius are ignored because the block supplies the exact location.
+     * @return List of results in a BlockResult format
+     */
+    public static List<BlockResult> performLookup(Block block, LookupOptions options) {
+        List<BlockResult> result = new ArrayList<>();
+
+        if (!Config.getGlobal().API_ENABLED) {
+            return result;
+        }
+
+        if (block == null || block.getWorld() == null) {
+            return result;
+        }
+
+        if (options == null) {
+            options = LookupOptions.builder().build();
+        }
+
+        try (Connection connection = Database.getConnection(false, 1000)) {
+            if (connection == null) {
+                return result;
+            }
+
+            Integer userId = MessageAPI.getUserId(connection, options.getUser());
+            if (userId != null && userId == -1) {
+                return result;
+            }
+
+            int checkTime = 0;
+            if (options.getTime() > 0) {
+                checkTime = (int) (System.currentTimeMillis() / 1000L) - options.getTime();
+            }
+
+            int x = block.getX();
+            int y = block.getY();
+            int z = block.getZ();
+            String worldName = block.getWorld().getName();
+            int worldId = WorldUtils.getWorldId(worldName);
+
+            StringBuilder query = new StringBuilder("SELECT time,user,action,type,data,blockdata,rolled_back,wid,x,y,z FROM ");
+            query.append(ConfigHandler.prefix).append("block ").append(WorldUtils.getWidIndex("block"));
+            query.append("WHERE wid = ? AND x = ? AND z = ? AND y = ? AND time > ?");
+            if (userId != null) {
+                query.append(" AND user = ?");
+            }
+            query.append(" ORDER BY rowid DESC");
+            if (options.hasLimit()) {
+                query.append(" LIMIT ").append(options.getLimitOffset()).append(", ").append(options.getLimitCount());
+            }
+
+            try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
+                statement.setInt(1, worldId);
+                statement.setInt(2, x);
+                statement.setInt(3, z);
+                statement.setInt(4, y);
+                statement.setInt(5, checkTime);
+                if (userId != null) {
+                    statement.setInt(6, userId);
+                }
+
+                try (ResultSet results = statement.executeQuery()) {
+                    while (results.next()) {
+                        result.add(parseBlockResult(connection, results, worldName));
                     }
                 }
             }
@@ -199,6 +280,22 @@ public class BlockAPI {
                 results.getLong("time"), resultUser, worldName, results.getInt("x"), results.getInt("y"), results.getInt("z"),
                 results.getInt("type"), results.getInt("data"), results.getInt("amount"), results.getBytes("metadata"),
                 results.getInt("action"), results.getInt("rolled_back")
+        );
+    }
+
+    private static BlockResult parseBlockResult(Connection connection, ResultSet results, String worldName) throws Exception {
+        int resultUserId = results.getInt("user");
+        String resultUser = ConfigHandler.playerIdCacheReversed.get(resultUserId);
+        if (resultUser == null) {
+            resultUser = UserStatement.loadName(connection, resultUserId);
+        }
+
+        int resultType = results.getInt("type");
+        String blockData = BlockUtils.byteDataToString(results.getBytes("blockdata"), resultType);
+
+        return new BlockResult(
+                results.getLong("time"), resultUser, worldName, results.getInt("x"), results.getInt("y"), results.getInt("z"),
+                resultType, results.getInt("data"), blockData, results.getInt("action"), results.getInt("rolled_back")
         );
     }
 

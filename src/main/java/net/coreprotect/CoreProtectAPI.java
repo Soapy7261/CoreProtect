@@ -23,6 +23,7 @@ import net.coreprotect.api.MessageAPI;
 import net.coreprotect.api.QueueLookup;
 import net.coreprotect.api.SessionLookup;
 import net.coreprotect.api.SignAPI;
+import net.coreprotect.api.result.BlockResult;
 import net.coreprotect.api.result.ContainerResult;
 import net.coreprotect.api.result.MessageResult;
 import net.coreprotect.api.result.SignResult;
@@ -109,6 +110,22 @@ public class CoreProtectAPI extends Queue {
     public List<String[]> blockLookup(Block block, int time) {
         if (isEnabled()) {
             return BlockAPI.performLookup(block, time);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a typed block lookup at the specified block.
+     *
+     * @param block
+     *            The block to look up
+     * @param options
+     *            Lookup options. User, time, and limit are applied; location and radius are ignored because the block supplies the exact location.
+     * @return List of results or null if API is disabled
+     */
+    public List<BlockResult> blockLookup(Block block, LookupOptions options) {
+        if (isEnabled()) {
+            return BlockAPI.performLookup(block, options);
         }
         return null;
     }
