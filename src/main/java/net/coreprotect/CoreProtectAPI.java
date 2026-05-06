@@ -21,8 +21,10 @@ import net.coreprotect.api.BlockAPI;
 import net.coreprotect.api.MessageAPI;
 import net.coreprotect.api.QueueLookup;
 import net.coreprotect.api.SessionLookup;
+import net.coreprotect.api.SignAPI;
 import net.coreprotect.api.result.ContainerResult;
 import net.coreprotect.api.result.MessageResult;
+import net.coreprotect.api.result.SignResult;
 import net.coreprotect.config.Config;
 import net.coreprotect.consumer.Queue;
 import net.coreprotect.database.Database;
@@ -235,6 +237,76 @@ public class CoreProtectAPI extends Queue {
     public List<MessageResult> commandLookup(String user, int time, int radius, Location radiusLocation) {
         if (isEnabled()) {
             return MessageAPI.performCommandLookup(user, time, radius, radiusLocation);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a sign text lookup at the specified location.
+     *
+     * @param location
+     *            The location to look up
+     * @param time
+     *            Time constraint in seconds
+     * @return List of results or null if API is disabled
+     */
+    public List<SignResult> signLookup(Location location, int time) {
+        if (isEnabled()) {
+            return SignAPI.performLookup(location, time);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a sign text lookup around the specified location.
+     *
+     * @param location
+     *            The center location to look up
+     * @param time
+     *            Time constraint in seconds
+     * @param radius
+     *            Radius to search in the X/Z plane; 0 searches the exact location
+     * @return List of results or null if API is disabled
+     */
+    public List<SignResult> signLookup(Location location, int time, int radius) {
+        if (isEnabled()) {
+            return SignAPI.performLookup(location, time, radius);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a sign text lookup for the specified user.
+     *
+     * @param user
+     *            The user to look up, or #global/null for all users
+     * @param time
+     *            Time constraint in seconds
+     * @return List of results or null if API is disabled
+     */
+    public List<SignResult> signLookup(String user, int time) {
+        if (isEnabled()) {
+            return SignAPI.performLookup(user, time);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a sign text lookup around the specified location.
+     *
+     * @param user
+     *            The user to look up, or #global/null for all users
+     * @param time
+     *            Time constraint in seconds
+     * @param radius
+     *            Radius to search in the X/Z plane; 0 searches the exact location
+     * @param radiusLocation
+     *            Center location for the radius search
+     * @return List of results or null if API is disabled
+     */
+    public List<SignResult> signLookup(String user, int time, int radius, Location radiusLocation) {
+        if (isEnabled()) {
+            return SignAPI.performLookup(user, time, radius, radiusLocation);
         }
         return null;
     }

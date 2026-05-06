@@ -132,7 +132,7 @@ public class MessageAPI {
         return result;
     }
 
-    private static Integer getUserId(Connection connection, String user) throws Exception {
+    static Integer getUserId(Connection connection, String user) throws Exception {
         if (user == null || user.isEmpty() || user.equalsIgnoreCase("#global")) {
             return null;
         }
@@ -172,7 +172,7 @@ public class MessageAPI {
         );
     }
 
-    private static int clampToInt(long value) {
+    static int clampToInt(long value) {
         if (value > Integer.MAX_VALUE) {
             return Integer.MAX_VALUE;
         }
