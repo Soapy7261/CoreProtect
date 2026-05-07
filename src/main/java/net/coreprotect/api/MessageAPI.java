@@ -6,8 +6,6 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.Location;
-
 import net.coreprotect.api.result.MessageResult;
 import net.coreprotect.config.Config;
 import net.coreprotect.config.ConfigHandler;
@@ -27,20 +25,12 @@ public class MessageAPI {
         return performChatLookup(LookupOptions.builder().user(user).time(offset).build());
     }
 
-    public static List<MessageResult> performChatLookup(String user, int offset, int radius, Location location) {
-        return performChatLookup(LookupOptions.builder().user(user).time(offset).radius(location, radius).build());
-    }
-
     public static List<MessageResult> performChatLookup(LookupOptions options) {
         return performLookup("chat", CoreProtectAction.CHAT, options);
     }
 
     public static List<MessageResult> performCommandLookup(String user, int offset) {
         return performCommandLookup(LookupOptions.builder().user(user).time(offset).build());
-    }
-
-    public static List<MessageResult> performCommandLookup(String user, int offset, int radius, Location location) {
-        return performCommandLookup(LookupOptions.builder().user(user).time(offset).radius(location, radius).build());
     }
 
     public static List<MessageResult> performCommandLookup(LookupOptions options) {

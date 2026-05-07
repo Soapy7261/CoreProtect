@@ -193,28 +193,24 @@ public class BlockAPI {
      * @return List of results in a ContainerResult format
      */
     public static List<ContainerResult> performContainerLookup(Location location, int offset) {
-        return performContainerLookup(location, offset, 0);
+        if (location == null) {
+            return new ArrayList<>();
+        }
+
+        return performContainerLookup(LookupOptions.builder().time(offset).location(location).build());
     }
 
     /**
-     * Performs a lookup of container transactions around the specified location.
-     * 
-     * @param location
-     *            The center location to look up
-     * @param offset
-     *            Time constraint in seconds (0 means no time constraint)
-     * @param radius
-     *            Radius to search in the X/Z plane (0 means exact location)
+     * Performs a lookup of container transactions using shared lookup options.
+     *
+     * @param options
+     *            Lookup options
      * @return List of results in a ContainerResult format
      */
-    public static List<ContainerResult> performContainerLookup(Location location, int offset, int radius) {
+    public static List<ContainerResult> performContainerLookup(LookupOptions options) {
         List<ContainerResult> result = new ArrayList<>();
 
         if (!Config.getGlobal().API_ENABLED) {
-            return result;
-        }
-
-        if (location == null || location.getWorld() == null) {
             return result;
         }
 
@@ -223,41 +219,26 @@ public class BlockAPI {
                 return result;
             }
 
-            int x = location.getBlockX();
-            int y = location.getBlockY();
-            int z = location.getBlockZ();
-            int time = (int) (System.currentTimeMillis() / 1000L);
-            int worldId = WorldUtils.getWorldId(location.getWorld().getName());
-            int checkTime = 0;
-
-            if (offset > 0) {
-                checkTime = time - offset;
+            LookupFilter filter = LookupFilter.fromOptions(connection, options);
+            if (filter.hasInvalidUser() || filter.hasInvalidLocation()) {
+                return result;
             }
 
-            String query = "SELECT time,user,action,type,data,amount,metadata,rolled_back,x,y,z FROM " + ConfigHandler.prefix + "container " + WorldUtils.getWidIndex("container") + "WHERE wid = ? AND x = ? AND z = ? AND y = ? AND time > ? ORDER BY rowid DESC";
-            if (radius > 0) {
-                query = "SELECT time,user,action,type,data,amount,metadata,rolled_back,x,y,z FROM " + ConfigHandler.prefix + "container " + WorldUtils.getWidIndex("container") + "WHERE wid = ? AND x >= ? AND x <= ? AND z >= ? AND z <= ? AND time > ? ORDER BY rowid DESC";
+            StringBuilder query = new StringBuilder("SELECT time,user,wid,x,y,z,action,type,data,amount,metadata,rolled_back FROM ");
+            query.append(ConfigHandler.prefix).append("container ");
+            if (filter.hasLocation()) {
+                query.append(WorldUtils.getWidIndex("container"));
             }
+            filter.appendWhere(query);
+            query.append(" ORDER BY rowid DESC");
+            filter.appendLimit(query);
 
-            try (PreparedStatement statement = connection.prepareStatement(query)) {
-                statement.setInt(1, worldId);
-                if (radius > 0) {
-                    statement.setInt(2, clampToInt((long) x - radius));
-                    statement.setInt(3, clampToInt((long) x + radius));
-                    statement.setInt(4, clampToInt((long) z - radius));
-                    statement.setInt(5, clampToInt((long) z + radius));
-                    statement.setInt(6, checkTime);
-                }
-                else {
-                    statement.setInt(2, x);
-                    statement.setInt(3, z);
-                    statement.setInt(4, y);
-                    statement.setInt(5, checkTime);
-                }
+            try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
+                filter.bind(statement);
 
                 try (ResultSet results = statement.executeQuery()) {
                     while (results.next()) {
-                        result.add(parseContainerResult(connection, results, location.getWorld().getName()));
+                        result.add(parseContainerResult(connection, results));
                     }
                 }
             }
@@ -269,7 +250,7 @@ public class BlockAPI {
         return result;
     }
 
-    private static ContainerResult parseContainerResult(Connection connection, ResultSet results, String worldName) throws Exception {
+    private static ContainerResult parseContainerResult(Connection connection, ResultSet results) throws Exception {
         int resultUserId = results.getInt("user");
         String resultUser = ConfigHandler.playerIdCacheReversed.get(resultUserId);
         if (resultUser == null) {
@@ -277,7 +258,7 @@ public class BlockAPI {
         }
 
         return new ContainerResult(
-                results.getLong("time"), resultUser, worldName, results.getInt("x"), results.getInt("y"), results.getInt("z"),
+                results.getLong("time"), resultUser, WorldUtils.getWorldName(results.getInt("wid")), results.getInt("x"), results.getInt("y"), results.getInt("z"),
                 results.getInt("type"), results.getInt("data"), results.getInt("amount"), results.getBytes("metadata"),
                 results.getInt("action"), results.getInt("rolled_back")
         );
@@ -299,14 +280,4 @@ public class BlockAPI {
         );
     }
 
-    private static int clampToInt(long value) {
-        if (value > Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
-        }
-        else if (value < Integer.MIN_VALUE) {
-            return Integer.MIN_VALUE;
-        }
-
-        return (int) value;
-    }
 }

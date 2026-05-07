@@ -25,19 +25,15 @@ public class SignAPI {
     }
 
     public static List<SignResult> performLookup(Location location, int offset) {
-        return performLookup(LookupOptions.builder().time(offset).location(location).build());
-    }
+        if (location == null) {
+            return new ArrayList<>();
+        }
 
-    public static List<SignResult> performLookup(Location location, int offset, int radius) {
-        return performLookup(LookupOptions.builder().time(offset).radius(location, radius).build());
+        return performLookup(LookupOptions.builder().time(offset).location(location).build());
     }
 
     public static List<SignResult> performLookup(String user, int offset) {
         return performLookup(LookupOptions.builder().user(user).time(offset).build());
-    }
-
-    public static List<SignResult> performLookup(String user, int offset, int radius, Location location) {
-        return performLookup(LookupOptions.builder().user(user).time(offset).radius(location, radius).build());
     }
 
     public static List<SignResult> performLookup(LookupOptions options) {
