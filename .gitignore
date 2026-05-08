@@ -216,6 +216,9 @@ hs_err_pid*
 # Documentation dev folder
 docs/dev/
 
+# API Test Plugin
+CoreProtect-TestAPI
+
 # Extensions
 /src/main/java/net/coreprotect/utility/extensions
 !/src/main/java/net/coreprotect/utility/extensions/Extensions.java

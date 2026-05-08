@@ -18,8 +18,18 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 import net.coreprotect.api.BlockAPI;
+import net.coreprotect.api.LookupOptions;
+import net.coreprotect.api.MessageAPI;
 import net.coreprotect.api.QueueLookup;
 import net.coreprotect.api.SessionLookup;
+import net.coreprotect.api.SignAPI;
+import net.coreprotect.api.UsernameAPI;
+import net.coreprotect.api.result.BlockResult;
+import net.coreprotect.api.result.ContainerResult;
+import net.coreprotect.api.result.MessageResult;
+import net.coreprotect.api.result.SignResult;
+import net.coreprotect.api.result.SessionResult;
+import net.coreprotect.api.result.UsernameResult;
 import net.coreprotect.config.Config;
 import net.coreprotect.consumer.Queue;
 import net.coreprotect.database.Database;
@@ -107,6 +117,22 @@ public class CoreProtectAPI extends Queue {
     }
 
     /**
+     * Performs a typed block lookup at the specified block.
+     *
+     * @param block
+     *            The block to look up
+     * @param options
+     *            Lookup options. User, time, and limit are applied; location and radius are ignored because the block supplies the exact location.
+     * @return List of results or null if API is disabled
+     */
+    public List<BlockResult> blockLookup(Block block, LookupOptions options) {
+        if (isEnabled()) {
+            return BlockAPI.performLookup(block, options);
+        }
+        return null;
+    }
+
+    /**
      * Performs a lookup on the queue data for the specified block.
      * 
      * @param block
@@ -115,6 +141,36 @@ public class CoreProtectAPI extends Queue {
      */
     public List<String[]> queueLookup(Block block) {
         return QueueLookup.performLookup(block);
+    }
+
+    /**
+     * Performs a container lookup at the specified location.
+     * 
+     * @param location
+     *            The location to look up
+     * @param time
+     *            Time constraint in seconds
+     * @return List of results or null if API is disabled
+     */
+    public List<ContainerResult> containerLookup(Location location, int time) {
+        if (isEnabled()) {
+            return BlockAPI.performContainerLookup(location, time);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a container lookup with shared lookup options.
+     *
+     * @param options
+     *            Lookup options
+     * @return List of results or null if API is disabled
+     */
+    public List<ContainerResult> containerLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return BlockAPI.performContainerLookup(options);
+        }
+        return null;
     }
 
     /**
@@ -128,6 +184,156 @@ public class CoreProtectAPI extends Queue {
      */
     public List<String[]> sessionLookup(String user, int time) {
         return SessionLookup.performLookup(user, time);
+    }
+
+    /**
+     * Performs a typed lookup on session data.
+     *
+     * @param options
+     *            Lookup options
+     * @return List of results or null if API is disabled
+     */
+    public List<SessionResult> sessionLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return SessionLookup.performLookup(options);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a username history lookup for the specified user.
+     *
+     * @param user
+     *            The user or UUID to look up, or #global/null for all users
+     * @param time
+     *            Time constraint in seconds
+     * @return List of results or null if API is disabled
+     */
+    public List<UsernameResult> usernameLookup(String user, int time) {
+        if (isEnabled()) {
+            return UsernameAPI.performLookup(user, time);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a username history lookup with shared lookup options.
+     *
+     * @param options
+     *            Lookup options. User, time, and limit are applied; location and radius are ignored.
+     * @return List of results or null if API is disabled
+     */
+    public List<UsernameResult> usernameLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return UsernameAPI.performLookup(options);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a chat message lookup for the specified user.
+     *
+     * @param user
+     *            The user to look up, or #global/null for all users
+     * @param time
+     *            Time constraint in seconds
+     * @return List of results or null if API is disabled
+     */
+    public List<MessageResult> chatLookup(String user, int time) {
+        if (isEnabled()) {
+            return MessageAPI.performChatLookup(user, time);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a chat message lookup with shared lookup options.
+     *
+     * @param options
+     *            Lookup options
+     * @return List of results or null if API is disabled
+     */
+    public List<MessageResult> chatLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return MessageAPI.performChatLookup(options);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a command lookup for the specified user.
+     *
+     * @param user
+     *            The user to look up, or #global/null for all users
+     * @param time
+     *            Time constraint in seconds
+     * @return List of results or null if API is disabled
+     */
+    public List<MessageResult> commandLookup(String user, int time) {
+        if (isEnabled()) {
+            return MessageAPI.performCommandLookup(user, time);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a command lookup with shared lookup options.
+     *
+     * @param options
+     *            Lookup options
+     * @return List of results or null if API is disabled
+     */
+    public List<MessageResult> commandLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return MessageAPI.performCommandLookup(options);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a sign text lookup at the specified location.
+     *
+     * @param location
+     *            The location to look up
+     * @param time
+     *            Time constraint in seconds
+     * @return List of results or null if API is disabled
+     */
+    public List<SignResult> signLookup(Location location, int time) {
+        if (isEnabled()) {
+            return SignAPI.performLookup(location, time);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a sign text lookup with shared lookup options.
+     *
+     * @param options
+     *            Lookup options
+     * @return List of results or null if API is disabled
+     */
+    public List<SignResult> signLookup(LookupOptions options) {
+        if (isEnabled()) {
+            return SignAPI.performLookup(options);
+        }
+        return null;
+    }
+
+    /**
+     * Performs a sign text lookup for the specified user.
+     *
+     * @param user
+     *            The user to look up, or #global/null for all users
+     * @param time
+     *            Time constraint in seconds
+     * @return List of results or null if API is disabled
+     */
+    public List<SignResult> signLookup(String user, int time) {
+        if (isEnabled()) {
+            return SignAPI.performLookup(user, time);
+        }
+        return null;
     }
 
     /**
